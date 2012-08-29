@@ -1,0 +1,94 @@
+body {
+	padding:10px;
+}
+
+ul {
+	min-height:100px;
+}
+
+li {
+	list-style-type: none;
+	min-height:15px;
+}
+	
+.guests {
+	padding:10px;
+	border:2px dashed green;
+}
+div.table-container {
+	display:inline;
+	float:left;
+	width:22%;
+	padding:10px 0 0 10px;
+}
+
+span.table-title {
+	font-weight:bold;
+	cursor: move;
+}
+
+
+ul.table {
+	padding: 2px;
+	margin: 2px;
+	border: 2px solid green;
+}
+
+ul.table.notfull
+{
+	border: 2px dashed green;
+}
+
+ul.table.overfull
+{
+	border: 2px solid red;
+}
+
+ul.guest-pool li {
+	width: auto;
+	cursor:move;
+	overflow: hidden;
+}
+
+li.table-guest {
+	padding: 7px;
+	margin: 2px;
+	border: 1px solid blue;
+	cursor:move;
+     -moz-border-radius:5px;
+    -webkit-border-radius:5px;
+    -khtml-border-radius: 5px;
+    border-radius: 5px;
+	background-color:white;
+}
+
+div.samba {
+	z-index: 999999;
+	background-color: white;
+	width:332px;
+height:265px;
+	background-image:url('../images/samba.png');
+	-webkit-border-radius: 10px;
+	cursor: move;
+	position:absolute;
+border: 2px solid orange;
+}
+
+.rounded-s {
+     -moz-border-radius:5px;
+    -webkit-border-radius:5px;
+    -khtml-border-radius: 5px;
+    border-radius: 5px;
+}
+.rounded-m {
+     -moz-border-radius: 10px;
+    -webkit-border-radius:10px;
+    -khtml-border-radius: 10px;
+    border-radius: 10px;
+}
+.rounded-l {
+     -moz-border-radius: 20px;
+    -webkit-border-radius: 20px;
+    -khtml-border-radius: 20px;
+    border-radius: 20px;
+}

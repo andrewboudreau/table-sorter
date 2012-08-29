@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width">
+  <link rel="stylesheet" href="css/aristo.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+	<body>
+	
+	<div class="samba">
+	</div>
+	
+	<div style="float:none; clear:both;">&nbsp;</div>
+	<div class="tables"></div>
+	
+	<br />
+	<br />
+	<br /><br /><br />
+	<div >
+		<textarea id="save-data" style="width:100%; height:100px;"></textarea>
+		<button id="save-button" class="ui-widget ui-button">save data</button>
+		<button id="save-button"class="ui-widget ui-button" onclick="if(confirm('this will reset all data'))localStorage.clear();window.location.href = window.location.href;">CLEAR</button>
+		<button id="load-button" class="ui-widget ui-button">load data</button>
+	</div>
+	
+	<div id="import" title="Import Guests" style="display:none;">
+		<textarea style="width:400px; height:450px;"></textarea>
+		<br />
+		<span><strong>import data: </strong></span> <br /><span>Mr. & Mrs. Smith,2,Mr. & Mrs. Johnson,4,My Friend David,1</span>
+	</div>
+	
+	<span id="filter-wrapper"><input placeholder="filter guests" type="text" id="guest-filter-query"><button id="guest-filter">filter</button><button id="clear-guest-filter">clear</button><br /></span>
+		<ul class="guest-pool" id="unseated" title="unseated guests">
+	</ul>
+	
+	<ul class="ignore"></ul>
+	
+	<script src="js/libs/jquery-1.7.1.min.js"></script>
+	<script src="js/model.js"></script>
+	<script src="http://ajax.cdnjs.com/ajax/libs/json2/20110223/json2.js"></script>
+	<script>
+	
+	$("#guest-filter").click(function(e) {
+		var query = $("#guest-filter-query").val();
+		filterGuestPool(query);
+	});
+	
+	$("#clear-guest-filter").click(function(e) {
+		$("#guest-filter-query").val("");
+		filterGuestPool("");
+	});
+	
+	$("#guest-filter-query").keypress(function(e) {
+		if( e.keyCode === 13 ) {
+			var query = $("#guest-filter-query").val();
+			filterGuestPool(query);
+		}
+	});
+	
+	$('#unseated').live("dialogclose", function(){
+		setTimeout(function() {
+			$("#unseated").dialog("open");
+		}, 2000);
+	});
+	
+	$("#load-button").click(function() {
+		var json = prompt("paste the json string");
+		if(json !== "") {
+			clearAll();
+			load(JSON.parse(json));
+		}
+	});
+	
+	$("li.table-guest").on("dblclick", function(e) {
+		console.log(this);
+	});
+	
+	function filterGuestPool(query) {
+		console.log("query: " + query);
+		var pool = $("#unseated > li");
+		console.log("pool length " + pool.length);
+		if( !query || query === "") {
+			pool.show();
+		}
+		
+		pool.each(function() {
+			var index = $(this).text().toLowerCase().indexOf(query.toLowerCase());
+			if(index === -1) {
+				$(this).hide();
+			} else {
+				$(this).show();
+			}
+		});
+	}
+	
+	function init() {
+		$("#unseated").dialog({
+			width: 460,
+			height: 600,
+			overflow:scroll,
+		});
+		
+		$("ul:not(.ignore)").sortable({
+			connectWith: ".table, .guest-pool",
+			beforeStop: updateSeatCounts,
+			helper : getHelper,
+			zIndex : 99999, 
+			start: function(event, ui){
+				ui.helper.text(ui.item.text());
+			}
+		});
+		
+		$("#filter-wrapper").insertBefore($("ul.guest-pool"));
+		$("ul").disableSelection();
+		updateSeatCounts();
+	}
+		
+	function getHelper(){
+		var helper = $("<li>").addClass("table-guest").show().appendTo("ul.ignore");
+		helper.show();
+		return helper;
+	}
+	
+	function clearAll() {
+		$("ul:not(#unseated)").remove();
+		$("#unseated > li").remove();
+		$("div.tables").children().wrap().remove();
+	};
+
+	function loadData() {
+		clearAll();
+		var data = $("#load-data").val();
+		var model = JSON.parse(data);
+		load(model);
+	}
+	
+	function load(model) {
+		createTables(model);
+		init();
+		$(".table-container").draggable({ handle: ".table-title" });
+	}
+	
+	function createGuest(name, seats) {
+		var seats = seats || 1
+			, seat = $("<li>")
+				.addClass("table-guest")
+				.data("seats", seats);
+		
+		seat.text(name);
+		seat.append($("<span>").addClass("guest-seats").text( " - " + seats.toString()));
+		
+		return seat;
+	}
+
+	function createTables(tables) {
+		var i;
+		$.each(tables, function(idx,v) {
+			if(idx % 4 === 0) {
+			 $("div.tables").append('<div style="float:none; clear:both;">&nbsp;</div>');
+			}
+			if(v.title === "unseated guests") {
+				$.each(v.guests, function(idx,v) {
+					$("#unseated").append(createGuest(v.name, v.seats));
+				});
+			} else {
+				createTable(v);
+			}
+		});
+	}
+
+	function createTable(table){
+		var container = $("<div>").addClass("table-container");
+		var title = $("<span>").addClass("table-title").text(table.title).appendTo(container);
+		var count = $("<span>").addClass("table-count").appendTo(container);
+		var t = $("<ul>").addClass("table").appendTo(container);
+		
+		$.each(table.guests, function(idx,v) {
+			t.append(createGuest(v.name, v.seats));
+		});
+		
+		container.appendTo("div.tables");
+	}
+
+	function saveData(event) {
+		var model = exportTables($(".tables .table-container"))
+			, data = JSON.stringify(model);
+			
+		if (event) {
+			$("#save-data").val(data);
+		}
+		localStorage.model = data;
+		return model;
+		debugger;
+	}
+
+	function exportTables(tables) {
+		var model = $.map(tables, function(v,idx) {
+			return exportTable($(v));
+		});
+		
+		model.push({ 
+			title : "unseated guests",
+			guests : $.map($("#unseated > li"), function(v,idx) {  return exportGuest(v); })
+		});
+		return model;
+	}
+
+	function exportTable(tableContainer) {
+		var title = tableContainer.children(".table-title").text().trim()
+			, guests = tableContainer.find(".table-guest:not(.ui-sortable-placeholder)");
+			
+		return {
+			"title": title,
+			"guests": $.map(guests, function(v,idx) {  return exportGuest(v); })
+		};
+	}
+
+	function exportGuest(guest) {
+		var $g = $(guest)
+			, name = $g.text().trim().split("-")[0]
+			, count = $g.data("seats");
+			
+		return { "name" : name, "seats": count };
+	}
+
+	function updateSeatCounts(event, ui) {
+		$("ul.table").each(function(idx,v) {
+			var count = 0;
+			$(this).find("li.table-guest").each(function(idx,v) {
+				count += parseInt($(this).data("seats")) || 0;
+			});
+			$(this).parent().find(".table-count").text(" ( " + count + " seats used )" );
+			if(count > 10) 
+			{
+				$(this).addClass("overfull");
+				$(this).removeClass("notfull");
+			}
+			else if(count === 10)
+			{
+				$(this).removeClass("overfull");
+				$(this).removeClass("notfull");
+			} 
+			else
+			{
+				$(this).removeClass("overfull");
+				$(this).addClass("notfull");
+			}
+		});
+		
+		saveData();
+		return true;
+	}
+		
+	function addToPool(data) {
+		var i;
+		for( i = 0; i < data.length; i++) {
+			$("#unseated").append(createGuest(data[i].name, data[i].seats));
+		}
+	}
+	
+	$(function() {
+		if( localStorage.model ) {
+			model = JSON.parse(localStorage.model);
+		}
+		
+		load(model);
+		$("#save-button").on("click", saveData);
+		$("div.samba").animate({"left": $(window).width() - 500}).draggable();
+		$(document).on("dblclick", function() {$("div.samba").hide("slow");});
+		
+	});
+</script>
+</body>
+</html>
